@@ -427,47 +427,50 @@ class Movie():
             self.error.append('tagline')
 
     def wikidata(self):
-        try:
-            url = "https://www.wikidata.org/w/index.php?search=" + self.movid
-            soup = self.__create_soup(url)
+        # try:
 
-            temp = soup.findAll('ul', {'class', 'mw-search-results'})
-            for li in temp:
-                t = li.findAll('div', {'class', 'mw-search-result-heading'})
-                mov = t[0].find('a')
-                href = mov.get('href')
-                wikidata_id = href.split('/')[2]
-                title = str(mov.get('title'))
-                tit,year = title.split('|')
-                year = year.strip().split(' ')[0].replace('\u200e', '')
-                # tit = tit.replace('\u200e', '')
+        url = "https://www.wikidata.org/w/index.php?search=" + self.movid
+        soup = self.__create_soup(url)
 
-                if (self.movie['year'] == year):
-                    self.movie['wikidata_id'] = wikidata_id
+        temp = soup.findAll('ul', {'class', 'mw-search-results'})
+        for li in temp:
+            t = li.findAll('div', {'class', 'mw-search-result-heading'})
+            mov = t[0].find('a')
+            href = mov.get('href')
+            wikidata_id = href.split('/')[2]
+            title = mov.get('title').encode('ascii','ignore').decode()
+            tit,year = title.split('|')
+            year = year.strip().split(' ')[0]
+            print(tit, year)
+            # .replace('\u200e', '')
+            # tit = tit.replace('\u200e', '')
 
-                    url = 'https://www.wikidata.org/wiki/' + self.movie['wikidata_id']
+            if (self.movie['year'] == year):
+                self.movie['wikidata_id'] = wikidata_id
 
-                    soup = self.__create_soup(url)
+                url = 'https://www.wikidata.org/wiki/' + self.movie['wikidata_id']
 
-                    try:
-                        temp = soup.find('div', {'id': 'P1258'})
-                        rotten_tomatoes_url = temp.find('a', {'class':'wb-external-id external'}).get('href')
-                        self.movie['rotten_tomatoes']['url'] = rotten_tomatoes_url
-                    except:
-                        self.error.append('rotten_tomatoes')
+                soup = self.__create_soup(url)
 
-                    try:
-                        temp = soup.find('div', {'id': 'P1712'})
-                        metacritic_url = temp.find('a', {'class':'wb-external-id external'}).get('href')
-                        self.movie['metacritic_url'] = metacritic_url
-                    except:
-                        self.error.append('metacritic')
+                try:
+                    temp = soup.find('div', {'id': 'P1258'})
+                    rotten_tomatoes_url = temp.find('a', {'class':'wb-external-id external'}).get('href')
+                    self.movie['rotten_tomatoes']['url'] = rotten_tomatoes_url
+                except:
+                    self.error.append('rotten_tomatoes')
 
-                else:
-                    self.error.append('wikidata')
-        except Exception as e:
-            print(e)
-            self.error.append('wikidata')
+                try:
+                    temp = soup.find('div', {'id': 'P1712'})
+                    metacritic_url = temp.find('a', {'class':'wb-external-id external'}).get('href')
+                    self.movie['metacritic_url'] = metacritic_url
+                except:
+                    self.error.append('metacritic')
+
+            else:
+                self.error.append('wikidata')
+        # except Exception as e:
+        #     print(e)
+        #     self.error.append('wikidata')
 
     # def rotten_tomatoes_url(self):
     #     try:
