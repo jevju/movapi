@@ -91,7 +91,7 @@ class Movie():
             print("Movapi: Movie id ''" + self.movid + "' not valid")
 
     def formatted_json(self):
-        return json.dumps(self.movie, indent = 4, ensure_ascii=False)
+        return json.dumps(self.movie, indent = 4, ensure_ascii=True)
 
     def print_error_msg(self):
         if len(self.error):
@@ -187,7 +187,8 @@ class Movie():
                         c['id'] = s.split('href="/name/')[1].split('/')[0]
                         c['name'] = s.split('> ')[1].split('\n')[0]
                     if 'class="character"' in s:
-                        c['character'] = str(t.text).replace('\n', '').replace('  ', '  ')
+                        c['character'] = str(t.text).strip()
+                        # .replace('\n', '').replace('  ', '')
                 cast.append(c)
 
             self.movie['cast'] = cast
@@ -464,7 +465,8 @@ class Movie():
 
                 else:
                     self.error.append('wikidata')
-        except:
+        except Exception as e:
+            print(e)
             self.error.append('wikidata')
 
     # def rotten_tomatoes_url(self):
