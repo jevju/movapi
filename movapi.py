@@ -7,7 +7,7 @@ import requests
 import re
 
 class Movie():
-    def __init__(self, movid, nor = False):
+    def __init__(self, nor = False):
         pass
 
     @staticmethod
@@ -92,8 +92,11 @@ class Movie():
         else:
             print("Movapi: Movie id ''" + self.movid + "' not valid")
 
+    @staticmethod
     def search_title(title, full=False):
         result = []
+	print(title)
+        print(title)
         try:
             url = 'https://www.imdb.com/find?q=' + title
             if full:
@@ -126,7 +129,8 @@ class Movie():
 
             return result
 
-        except:
+        except Exception as e:
+	    print(e)
             return result
 
 
@@ -143,6 +147,7 @@ class Movie():
     #         print()
     #
 
+    @staticmethod
     def __create_soup(url, nor = False):
         request = requests.get(url, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0) Gecko/20100101 Firefox/68.0",
@@ -157,6 +162,7 @@ class Movie():
         soup = BeautifulSoup(data, "html.parser")
         return soup
 
+    @staticmethod
     def imdbID(soup):
         try:
             item = str(soup.find(property = 'pageId'))
@@ -168,6 +174,7 @@ class Movie():
         except:
             return None
 
+    @staticmethod
     def title(soup):
         try:
             item = soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
@@ -177,6 +184,7 @@ class Movie():
             # self.error.append("title")
             return None
 
+    @staticmethod
     def title_nor(soup):
         try:
             item = soup.soup_nor.find(itemprop = "name")
@@ -186,6 +194,7 @@ class Movie():
             # self.error.append("title")
             return None
 
+    @staticmethod
     def year(soup):
         try:
             item = soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
@@ -195,6 +204,7 @@ class Movie():
             # self.error.append("year")
             return None
 
+    @staticmethod
     def stars(soup):
         try:
             stars = []
@@ -215,6 +225,7 @@ class Movie():
             # self.error.append("stars")
             return None
 
+    @staticmethod
     def cast(soup):
         try:
             cast = []
@@ -261,6 +272,7 @@ class Movie():
         # except:
         #     self.error.append("actors")
 
+    @staticmethod
     def characters(soup):
         try:
             item = soup.findAll(itemprop = "actor")
@@ -277,6 +289,7 @@ class Movie():
             # self.error.append("characters")
             return None
 
+    @staticmethod
     def directors(soup):
         try:
             directors = []
@@ -297,6 +310,7 @@ class Movie():
             # self.error.append("directors")
             return None
 
+    @staticmethod
     def production_company(soup):
         try:
             companies = []
@@ -316,6 +330,7 @@ class Movie():
             # self.error.append("production company")
             return None
 
+    @staticmethod
     def writers(soup):
         try:
             directors = []
@@ -337,6 +352,7 @@ class Movie():
             return None
 
 
+    @staticmethod
     def genres(soup):
         try:
             genres = []
@@ -354,6 +370,7 @@ class Movie():
             return None
 
     ## -- Finds duration of movie,
+    @staticmethod
     def duration(soup):
         try:
             dur = {}
@@ -370,6 +387,7 @@ class Movie():
             # self.error.append("duration")
             return None
 
+    @staticmethod
     def plot_long(soup):
         try:
             return soup.find('div', {'id': 'titleStoryLine'}).find('p').text.strip().split('\n')[0]
@@ -377,6 +395,7 @@ class Movie():
             # self.error.append("plot long")
             return None
 
+    @staticmethod
     def plot_short(soup):
         try:
             return soup.find('div', {'class': 'summary_text'}).text.strip()
@@ -384,7 +403,7 @@ class Movie():
             # self.error.append("plot short")
             return None
 
-
+    @staticmethod
     def rating(soup):
         try:
             li = soup.find_all(itemprop="ratingCount")
@@ -414,6 +433,7 @@ class Movie():
             # self.error.append("rating")
             return None
 
+    @staticmethod
     def awards(soup):
         try:
             li = soup.find_all("span", itemprop="awards")
@@ -427,6 +447,7 @@ class Movie():
             # self.error.append("awards")
             return None
 
+    @staticmethod
     def poster(soup):
         try:
             li = soup.find_all('div', {'class':'poster'})
@@ -438,6 +459,7 @@ class Movie():
             # self.error.append("poster URL")
             return None
 
+    @staticmethod
     def content_rating(soup):
         try:
             i = soup.find('div', {'class', 'subtext'})
@@ -446,7 +468,7 @@ class Movie():
             # self.error.append("content Rating")
             return None
 
-
+    @staticmethod
     def metascore(soup):
         try:
             temp = soup.find("div", { "class" : "metacriticScore score_favorable titleReviewBarSubItem" })
@@ -465,6 +487,7 @@ class Movie():
         # print(url)
         # print(temp[0].get('src'))
 
+    @staticmethod
     def recommended(soup):
         try:
             temp = soup.findAll("div", {'class', 'rec_item'})
@@ -476,6 +499,7 @@ class Movie():
             # self.error.append('recommended')
             return None
 
+    @staticmethod
     def tagline(soup):
         try:
             temp = soup.findAll("div", {'class', 'txt-block'})
@@ -490,6 +514,7 @@ class Movie():
             # self.error.append('tagline')
             return None
 
+    @staticmethod
     def wikidata(self):
         try:
             url = "https://www.wikidata.org/w/index.php?search=" + self.movid
@@ -547,6 +572,7 @@ class Movie():
     #     except:
     #         self.error.append('rotten_tomatoes_url')
 
+    @staticmethod
     def rotten_tomatoes_rating(self):
         try:
             url = self.movie['rotten_tomatoes']['url']
@@ -580,6 +606,7 @@ class Movie():
         except:
             self.error.append('rotten_tomatoes_rating')
 
+    @staticmethod
     def metacritic(self):
         try:
             url = self.movie['metacritic_url']
