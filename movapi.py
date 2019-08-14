@@ -8,11 +8,14 @@ import re
 
 class Movie():
     def __init__(self, movid, nor = False):
+        pass
 
-        self.movid = movid
+    @staticmethod
+    def imdb_id(movid):
+        # self.movid = movid
         RT = False
 
-        self.movie = {
+        movie = {
             'imdbID':       None,
             'title':        None,
             'year':         None,
@@ -39,36 +42,36 @@ class Movie():
             'metacritic_rating': None,
         }
 
-        self.error = []
+        error = []
 
-        pattern = '^[t]{2}[0-9]{7}$'
+        pattern = '^[t]{2}[0-9]{7,8}$'
 
-        if re.search(pattern, self.movid):
-            url = "http://www.imdb.com/title/" + self.movid
+        if re.search(pattern, movid):
+            url = "http://www.imdb.com/title/" + movid
             # url = "https://13.32.221.251:443/title/" + self.movid
 
-            self.soup = self.__create_soup(url)
+            soup = Movie.__create_soup(url)
 
-            self.imdbID()
-            self.title()
-            self.year()
-            self.stars()
-            self.cast()
-            self.directors()
-            self.production_company()
-            self.writers()
-            self.genres()
-            self.duration()
-            self.plot_long()
-            self.plot_short()
-            self.rating()
-            self.awards()
-            self.poster()
-            self.content_rating()
-            self.metascore()
-            # self.trailer()
-            self.recommended()
-            self.tagline()
+            movie['imdbID'] = Movie.imdbID(soup)
+            movie['title'] = Movie.title(soup)
+            movie['year'] = Movie.year(soup)
+            movie['stars'] = Movie.stars(soup)
+            movie['cast'] = Movie.cast(soup)
+            movie['directors'] = Movie.directors(soup)
+            movie['production_company'] = Movie.production_company(soup)
+            movie['writers'] = Movie.writers(soup)
+            movie['genres'] = Movie.genres(soup)
+            movie['duration'] = Movie.duration(soup)
+            movie['plot_short'] = Movie.plot_long(soup)
+            movie['plot_long'] = Movie.plot_short(soup)
+            movie['rating'] = Movie.rating(soup)
+            movie['awards'] = Movie.awards(soup)
+            movie['poster_url'] = Movie.poster(soup)
+            movie['content_rating'] = Movie.content_rating(soup)
+            movie['metascore'] = Movie.metascore(soup)
+            # Movie.trailer()
+            movie['recommended'] = Movie.recommended(soup)
+            movie['tagline'] = Movie.tagline(soup)
 
             # if nor:
             #     self.soup_nor = self.__create_soup(url, nor=True)
@@ -83,24 +86,64 @@ class Movie():
                 self.rotten_tomatoes_rating()
                 self.metacritic()
 
-
-
-            self.print_error_msg()
+            # self.print_error_msg()
+            return movie
 
         else:
             print("Movapi: Movie id ''" + self.movid + "' not valid")
 
-    def formatted_json(self):
-        return json.dumps(self.movie, indent = 4, ensure_ascii=True)
+    def search_title(title, full=False):
+        result = []
+        try:
+            url = 'https://www.imdb.com/find?q=' + title
+            if full:
+                url = url + '&s=tt'
 
-    def print_error_msg(self):
-        if len(self.error):
-            print(str(len(self.error)) + " fields not found for '" + self.movid + "'")
-            for msg in self.error:
-                print(msg)
-            print()
+            soup = Movie.__create_soup(url)
 
-    def __create_soup(self, url, nor = False):
+            sections = soup.find_all('div', class_='findSection')
+
+            for section in sections:
+                s = section.find_all('h3', class_='findSectionHeader')[0].text
+                # print(s)
+                if s == 'Titles':
+                    # print('title')
+                    res = section.find_all('tr', class_='findResult')
+                    for m in res:
+                        movie = {}
+                        movie['imdbID'] = m.find_all('td', class_='result_text')[0].find('a')['href'].split('/title/')[1].split('/')[0]
+                        # print(movie)
+                        movie['poster_url'] = m.find_all('img')[0]['src']
+                        movie['title'] = m.find_all('td', class_='result_text')[0].find('a').text
+
+                        try:
+                            year = re.findall(r"[(]{1}[0-9]{4}[)]{1}", m.find_all('td', class_='result_text')[0].text)[0]
+                            movie['year'] = year.replace('(', '').replace(')', '')
+                        except:
+                            movie['year'] = None
+
+                        result.append(movie)
+
+            return result
+
+        except:
+            return result
+
+
+
+
+    def formatted_json(movie):
+        return json.dumps(movie, indent = 4, ensure_ascii=True)
+
+    # def print_error_msg(self):
+    #     if len(self.error):
+    #         print(str(len(self.error)) + " fields not found for '" + self.movid + "'")
+    #         for msg in self.error:
+    #             print(msg)
+    #         print()
+    #
+
+    def __create_soup(url, nor = False):
         request = requests.get(url, headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:68.0) Gecko/20100101 Firefox/68.0",
             "Accept-Language": "en-US, en;q=0.5"
@@ -114,45 +157,48 @@ class Movie():
         soup = BeautifulSoup(data, "html.parser")
         return soup
 
-    def imdbID(self):
+    def imdbID(soup):
         try:
-            item = str(self.soup.find(property = 'pageId'))
+            item = str(soup.find(property = 'pageId'))
             sep = '" property'
             rest = item.split(sep)[0]
             sep = 'content="'
             rest = rest.split(sep)[1]
-            self.movie['imdbID'] = rest
+            return rest
         except:
-            self.error.append("imdbID")
+            return None
 
-    def title(self):
+    def title(soup):
         try:
-            item = self.soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
+            item = soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
             title = re.split(r'\(([\d]){4}\)', item)[0].strip()
-            self.movie['title'] = title
+            return title
         except:
-            self.error.append("title")
+            # self.error.append("title")
+            return None
 
-    def title_nor(self):
+    def title_nor(soup):
         try:
-            item = self.soup_nor.find(itemprop = "name")
+            item = soup.soup_nor.find(itemprop = "name")
             title = str(item.next).strip()
-            self.movie['title_nor'] = title
+            return title
         except:
-            self.error.append("title")
+            # self.error.append("title")
+            return None
 
-    def year(self):
+    def year(soup):
         try:
-            item = self.soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
+            item = soup.findAll("div", {"class":"title_wrapper"})[0].h1.getText()
             year = re.search(r'\(([\d]){4}\)', item).group().replace('(','').replace(')','')
-            self.movie['year'] = year
+            return year
         except:
-            self.error.append("year")
+            # self.error.append("year")
+            return None
 
-    def stars(self):
+    def stars(soup):
         try:
             stars = []
-            li = self.soup.find_all('div', {'class':'credit_summary_item'})
+            li = soup.find_all('div', {'class':'credit_summary_item'})
             for i in li:
                 if 'Stars:' in i.text:
                     for a in i:
@@ -163,15 +209,16 @@ class Movie():
                             dir['id'] = s.split('/name/')[1].split('/')[0]
                             stars.append(dir)
 
-            self.movie['stars'] = stars
+            return stars
 
         except:
-            self.error.append("stars")
+            # self.error.append("stars")
+            return None
 
-    def cast(self):
+    def cast(soup):
         try:
             cast = []
-            li = self.soup.findAll('table', {'class', 'cast_list'})[0].findAll('tr')
+            li = soup.findAll('table', {'class', 'cast_list'})[0].findAll('tr')
 
             for r in li:
                 td = r.findAll('td')
@@ -191,10 +238,11 @@ class Movie():
                         # .replace('\n', '').replace('  ', '')
                 cast.append(c)
 
-            self.movie['cast'] = cast
+            return cast
 
         except:
-            self.error.append("actors")
+            # self.error.append("actors")
+            return None
 
         # for l in li:
         #     a = l.findAll('a')
@@ -213,25 +261,26 @@ class Movie():
         # except:
         #     self.error.append("actors")
 
-    def characters(self):
+    def characters(soup):
         try:
-            item = self.soup.findAll(itemprop = "actor")
-            ch = self.soup.findAll('td', {'class':'character'})
+            item = soup.findAll(itemprop = "actor")
+            ch = soup.findAll('td', {'class':'character'})
             templist = []
             for i in range(len(item)):
                 tempdict = {}
                 tempdict['actor'] = item[i].get_text().replace("\n", "").lstrip(' ').rstrip()
                 tempdict['character'] = ch[i].get_text().replace("\n", "").replace("  ", "").lstrip(' ').rstrip()
                 templist.append(tempdict)
-            self.movie['characters']  = templist
+            return templist
         except Exception as e:
-            print(e)
-            self.error.append("characters")
+            # print(e)
+            # self.error.append("characters")
+            return None
 
-    def directors(self):
+    def directors(soup):
         try:
             directors = []
-            li = self.soup.find_all('div', {'class':'credit_summary_item'})
+            li = soup.find_all('div', {'class':'credit_summary_item'})
             for i in li:
                 if 'Director' in i.text:
                     for a in i:
@@ -242,15 +291,16 @@ class Movie():
                             d['name'] = s.split('>')[1].split('<')[0]
                             directors.append(d)
 
-            self.movie['directors'] = directors
+            return directors
 
         except:
-            self.error.append("directors")
+            # self.error.append("directors")
+            return None
 
-    def production_company(self):
+    def production_company(soup):
         try:
             companies = []
-            temp = self.soup.findAll('div', {'class', 'txt-block'})
+            temp = soup.findAll('div', {'class', 'txt-block'})
             for t in temp:
                 h = str(t.find('h4'))
                 if 'Production C' in h:
@@ -260,15 +310,16 @@ class Movie():
                         if 'See more' in s:
                             continue
                         companies.append(s)
-            self.movie['production_company'] = companies
+            return companies
 
         except:
-            self.error.append("production company")
+            # self.error.append("production company")
+            return None
 
-    def writers(self):
+    def writers(soup):
         try:
             directors = []
-            li = self.soup.find_all('div', {'class':'credit_summary_item'})
+            li = soup.find_all('div', {'class':'credit_summary_item'})
             for i in li:
                 if 'Writer' in i.text:
                     for a in i:
@@ -279,16 +330,17 @@ class Movie():
                             d['name'] = s.split('>')[1].split('<')[0]
                             directors.append(d)
 
-            self.movie['writers'] = directors
+            return directors
 
         except:
-            self.error.append("directors")
+            # self.error.append("directors")
+            return None
 
 
-    def genres(self):
+    def genres(soup):
         try:
             genres = []
-            temp = self.soup.findAll('div', {'class', 'inline'})
+            temp = soup.findAll('div', {'class', 'inline'})
             for t in temp:
                 c = t.find('h4')
                 if 'Genres' in str(c):
@@ -296,15 +348,16 @@ class Movie():
                     for g in gs:
                         genres.append(g.text.strip())
                     break
-            self.movie['genres'] = genres
+            return genres
         except:
-            self.error.append("genres")
+            # self.error.append("genres")
+            return None
 
     ## -- Finds duration of movie,
-    def duration(self):
+    def duration(soup):
         try:
             dur = {}
-            temp = self.soup.findAll('time')
+            temp = soup.findAll('time')
             for d in temp:
                 t = d.text.strip()
                 if 'h' in t:
@@ -312,32 +365,35 @@ class Movie():
                 else:
                     dur['min'] = t
                 dur['stamp'] = str(d).split('datetime="')[1].split('"')[0]
-            self.movie['duration'] = dur
+            return dur
         except:
-            self.error.append("duration")
+            # self.error.append("duration")
+            return None
 
-    def plot_long(self):
+    def plot_long(soup):
         try:
-            self.movie['plot_long'] = self.soup.find('div', {'id': 'titleStoryLine'}).find('p').text.strip().split('\n')[0]
+            return soup.find('div', {'id': 'titleStoryLine'}).find('p').text.strip().split('\n')[0]
         except:
-            self.error.append("plot long")
+            # self.error.append("plot long")
+            return None
 
-    def plot_short(self):
+    def plot_short(soup):
         try:
-            self.movie['plot_short'] =  self.soup.find('div', {'class': 'summary_text'}).text.strip()
+            return soup.find('div', {'class': 'summary_text'}).text.strip()
         except:
-            self.error.append("plot short")
+            # self.error.append("plot short")
+            return None
 
 
-    def rating(self):
+    def rating(soup):
         try:
-            li = self.soup.find_all(itemprop="ratingCount")
+            li = soup.find_all(itemprop="ratingCount")
             ratingCount = li[0].get_text()
 
-            li = self.soup.find_all(itemprop="ratingValue")
+            li = soup.find_all(itemprop="ratingValue")
             ratingValue = li[0].get_text()
 
-            li = self.soup.find_all(itemprop="bestRating")
+            li = soup.find_all(itemprop="bestRating")
             ratingBest = li[0].get_text()
 
             templist = []
@@ -353,46 +409,51 @@ class Movie():
             templist.append(tempdict2)
             templist.append(tempdict3)
 
-            self.movie['rating'] = templist
+            return templist
         except:
-            self.error.append("rating")
+            # self.error.append("rating")
+            return None
 
-    def awards(self):
+    def awards(soup):
         try:
-            li = self.soup.find_all("span", itemprop="awards")
+            li = soup.find_all("span", itemprop="awards")
             templist = []
             for i in li:
                 u = (i.get_text().replace('.',''))
                 u = re.sub("\s\s+", " ", u)
                 templist.append(u.lstrip(' ').rstrip())
-            self.movie['awards'] = templist
+            return templist
         except:
-            self.error.append("awards")
+            # self.error.append("awards")
+            return None
 
-    def poster(self):
+    def poster(soup):
         try:
-            li = self.soup.find_all('div', {'class':'poster'})
+            li = soup.find_all('div', {'class':'poster'})
             for l in li:
                 s = str(l)
                 if 'src="' in s:
-                    self.movie['poster_url'] = s.split('src="')[1].split('"')[0]
+                    return s.split('src="')[1].split('"')[0]
         except:
-            self.error.append("poster URL")
+            # self.error.append("poster URL")
+            return None
 
-    def content_rating(self):
+    def content_rating(soup):
         try:
-            i = self.soup.find('div', {'class', 'subtext'})
-            self.movie['content_rating'] = i.text.split('|')[0].strip()
+            i = soup.find('div', {'class', 'subtext'})
+            return i.text.split('|')[0].strip()
         except:
-            self.error.append("content Rating")
+            # self.error.append("content Rating")
+            return None
 
 
-    def metascore(self):
+    def metascore(soup):
         try:
-            temp = self.soup.find("div", { "class" : "metacriticScore score_favorable titleReviewBarSubItem" })
-            self.movie['metascore'] = temp.get_text().lstrip().rstrip()
+            temp = soup.find("div", { "class" : "metacriticScore score_favorable titleReviewBarSubItem" })
+            return temp.get_text().lstrip().rstrip()
         except:
-            self.error.append("metascore")
+            # self.error.append("metascore")
+            return None
 
     # def trailer(self):
     #     try:
@@ -404,31 +465,33 @@ class Movie():
         # print(url)
         # print(temp[0].get('src'))
 
-    def recommended(self):
+    def recommended(soup):
         try:
-            temp = self.soup.findAll("div", {'class', 'rec_item'})
+            temp = soup.findAll("div", {'class', 'rec_item'})
             ids = []
             for i in temp:
                 ids.append(i.attrs['data-tconst'])
-            self.movie['recommended'] = ids
+            return ids
         except:
-            self.error.append('recommended')
+            # self.error.append('recommended')
+            return None
 
-    def tagline(self):
+    def tagline(soup):
         try:
-            temp = self.soup.findAll("div", {'class', 'txt-block'})
+            temp = soup.findAll("div", {'class', 'txt-block'})
             for t in temp:
                 s = str(t)
                 if 'Taglines' in s:
-                    self.movie['tagline'] = t.text.split('\n')[2].split('\n')[0].strip()
-                    break
+                    return t.text.split('\n')[2].split('\n')[0].strip()
+                    # break
+
 
         except:
-            self.error.append('tagline')
+            # self.error.append('tagline')
+            return None
 
     def wikidata(self):
         try:
-
             url = "https://www.wikidata.org/w/index.php?search=" + self.movid
             soup = self.__create_soup(url)
 
@@ -548,8 +611,12 @@ class Movie():
             self.error.append('metacritic_rating')
 
 if __name__ == "__main__":
-    movie_id = "tt0499549"
-    # print(Movie(movie_id).formatted_json())
-    res = Movie(movie_id).formatted_json().replace("'", "´")
-    print((res))
-    # m = Movie(movie_id, nor = True)
+
+    # movie_id = "tt0499549"
+    # res = Movie.imdb_id(movie_id)
+    # print((res))
+
+
+    movie_title = 'sola'
+    res = Movie.search_title(movie_title, full=True)
+    print(res)
