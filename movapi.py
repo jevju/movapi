@@ -44,9 +44,9 @@ class Movie():
 
         error = []
 
-        pattern = '^[t]{2}[0-9]{7,8}$'
+        pattern = re.compile(r'[t]{2}[0-9]{7,8}')
 
-        if re.search(pattern, movid):
+        if pattern.search(movid):
             url = "http://www.imdb.com/title/" + movid
             # url = "https://13.32.221.251:443/title/" + self.movid
 
@@ -93,14 +93,20 @@ class Movie():
             print("Movapi: Movie id ''" + self.movid + "' not valid")
 
     @staticmethod
-    def search_title(title, full=False):
+    def search_title(title, count=10):
+        pattern = re.compile(r'[t]{2}[0-9]{7,8}')
+
+        if pattern.search(title):
+            # print('toøeu')
+            return Movie.imdb_id(pattern.search(title).group())
+
         result = []
-	print(title)
+	# print(title)
         print(title)
         try:
-            url = 'https://www.imdb.com/find?q=' + title
-            if full:
-                url = url + '&s=tt'
+            url = 'https://www.imdb.com/find?q=' + title + '&s=tt'
+            # if full:
+            #     url = url + '&s=tt'
 
             soup = Movie.__create_soup(url)
 
@@ -112,8 +118,10 @@ class Movie():
                 if s == 'Titles':
                     # print('title')
                     res = section.find_all('tr', class_='findResult')
-                    for m in res:
+                    for i, m in enumerate(res):
                         movie = {}
+                        if i > count:
+                            break
                         movie['imdbID'] = m.find_all('td', class_='result_text')[0].find('a')['href'].split('/title/')[1].split('/')[0]
                         # print(movie)
                         movie['poster_url'] = m.find_all('img')[0]['src']
@@ -644,6 +652,6 @@ if __name__ == "__main__":
     # print((res))
 
 
-    movie_title = 'sola'
-    res = Movie.search_title(movie_title, full=True)
+    movie_title = 'fs fsaf tt1234567 hshs'
+    res = Movie.search_title(movie_title, count=5)
     print(res)
