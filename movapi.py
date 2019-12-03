@@ -135,11 +135,12 @@ class Movie():
 
                         result.append(movie)
 
-            return result
+            return {'titles':result}
 
         except Exception as e:
-	    print(e)
-            return result
+	        print(e)
+
+        return None
 
 
 
